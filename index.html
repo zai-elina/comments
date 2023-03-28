@@ -63,7 +63,8 @@
       const counter = document.querySelectorAll(".likes-counter");
 
       for (const item of likesButton) {
-        item.addEventListener("click", () => {
+        item.addEventListener("click", (event) => {
+          event.stopPropagation();
           const index = item.dataset.index;
 
           if (item.classList.contains("-active-like")) {
@@ -88,7 +89,8 @@
       for (const editButton of editButtons) {
         let isEdit = false;
 
-        editButton.addEventListener("click", () => {
+        editButton.addEventListener("click", (event) => {
+          event.stopPropagation();
           const index = editButton.dataset.index;
 
           if (!isEdit) {
@@ -109,18 +111,33 @@
       }
     };
 
+    //Ответ на комментарий
+    const replyToComment = () => {
+      const commentElements = document.querySelectorAll(".comment");
+      const textareaText = document.querySelector(".add-form-text");
+
+      for (const commentElement of commentElements) {
+        commentElement.addEventListener("click", () => {
+          const index = commentElement.dataset.index;
+          textareaText.value = `QUOTE_BEGIN ${comments[index].name}:\n${comments[index].text} QUOTE_END`;
+        });
+      }
+    };
+
     // Рендеринг комментраиев
     const renderComments = () => {
       const commentsHTML = comments
         .map((item, index) => {
-          return `<li class="comment">
+          return `<li class="comment" data-index=${index}>
           <div class="comment-header">
             <div>${item.name}</div>
             <div>${item.date}</div>
           </div>
           <div class="comment-body">
             <div class="comment-text">
-              ${item.text}
+              ${item.text
+                .replaceAll("QUOTE_BEGIN", "<div class='quote'>")
+                .replaceAll("QUOTE_END", "</div>")}
             </div>
           </div>
           <div class="comment-footer">
@@ -139,6 +156,7 @@
       listComments.innerHTML = commentsHTML;
       likeComment();
       editComment();
+      replyToComment();
     };
 
     renderComments();
@@ -169,13 +187,21 @@
       const oldList = listComments.innerHTML;
 
       comments.push({
-        name: userName.value,
+        name: userName.value
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;"),
         date: `${dateNow.getDate()}.${formatDate(dateNow.getMonth())}.${String(
           dateNow.getFullYear()
         ).slice(2)} ${formatDate(dateNow.getHours())}:${formatDate(
           dateNow.getMinutes()
         )}`,
-        text: userСomment.value,
+        text: userСomment.value
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;"),
         likes: 0,
       });
 

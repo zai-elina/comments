@@ -62,7 +62,7 @@ body {
 
 .comment-text {
   font-size: 32px;
-  word-wrap: break-word;
+  white-space: pre-line;
 }
 
 .likes {
@@ -162,4 +162,11 @@ body {
   border: none;
   border-radius: 18px;
   cursor: pointer;
+}
+.quote{
+  background-color: #fff;
+  font-size: 18px;
+  color:#000;
+  margin-bottom: 30px;
+  padding: 5px;
 }
