@@ -67,17 +67,15 @@
           event.stopPropagation();
           const index = item.dataset.index;
 
-          if (item.classList.contains("-active-like")) {
+          if (comments[index].isliked) {
             comments[index].likes -= 1;
-            item.classList.remove("-active-like");
-            counter[index].innerText = comments[index].likes;
             comments[index].isliked = false;
           } else {
             comments[index].likes += 1;
-            item.classList.add("-active-like");
-            counter[index].innerText = comments[index].likes;
             comments[index].isliked = true;
           }
+
+          renderComments();
         });
       }
     };
