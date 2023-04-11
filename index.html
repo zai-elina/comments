@@ -15,12 +15,14 @@
           type="text"
           class="add-form-name"
           placeholder="Введите ваше имя"
+          oninput="getName();"
         />
         <textarea
           type="textarea"
           class="add-form-text"
           placeholder="Введите ваш коментарий"
           rows="4"
+          oninput="getText()"
         ></textarea>
         <div class="add-form-row">
           <button class="add-form-button">Написать</button>
@@ -51,6 +53,9 @@
         }
       )
         .then((response) => {
+          if (response.status === 500) {
+            throw new Error("Сервер сломался, попробуй позже");
+          }
           return response.json();
         })
         .then((responseData) => {
@@ -66,6 +71,13 @@
           });
           comments = appComments;
           renderComments();
+        })
+        .catch((error) => {
+          if (error.message === "Сервер сломался, попробуй позже") {
+            alert("Сервер сломался, попробуй позже");
+          } else {
+            alert("Кажется, у вас сломался интернет, попробуйте позже");
+          }
         });
     }
 
@@ -197,7 +209,7 @@
     };
 
     //Рендеринг формы
-    const renderForm = (isLoading) => {
+    const renderForm = (isLoading, insertedName, insertedText) => {
       const formWindow = document.querySelector(".add-form");
       if (isLoading) {
         formWindow.innerHTML = `Комментарий добавляется...`;
@@ -206,18 +218,24 @@
           type="text"
           class="add-form-name"
           placeholder="Введите ваше имя"
+          oninput="getName();"
+          ${insertedName ? `value = ${insertedName}` : ""}
         />
         <textarea
           type="textarea"
           class="add-form-text"
           placeholder="Введите ваш коментарий"
           rows="4"
-        ></textarea>
+          oninput="getText();"
+        >${insertedText}</textarea>
         <div class="add-form-row">
           <button class="add-form-button">Написать</button>
         </div>`;
       }
     };
+
+    const getName = () => userName.value;
+    const getText = () => userСomment.value;
 
     // Добавление новых комментариев
     function addComment() {
@@ -236,6 +254,7 @@
       }
       isLoading = true;
       renderForm(isLoading);
+      console.log(userName.value);
 
       fetch("https://webdev-hw-api.vercel.app/api/v1/zainullina/comments", {
         method: "POST",
@@ -251,8 +270,17 @@
             .replaceAll(">", "&gt;")
             .replaceAll('"', "&quot;"),
         }),
+        // forceError: true,
       })
         .then((response) => {
+          if (response.status === 400) {
+            throw new Error(
+              "Имя и комментарий должны быть не короче 3 символов"
+            );
+          }
+          if (response.status === 500) {
+            throw new Error("Сервер сломался, попробуй позже");
+          }
           return response.json();
         })
         .then((responseData) => {
@@ -260,11 +288,28 @@
         })
         .then(() => {
           isLoading = false;
-          renderForm(isLoading);
+          renderForm(isLoading, "", "");
+          userСomment.value = "";
+          userName.value = "";
+        })
+        .catch((error) => {
+          isLoading = false;
+          const insertedName = getName();
+          const insertedText = getText();
+
+          renderForm(isLoading, insertedName, insertedText);
+          if (
+            error.message ===
+            "Имя и комментарий должны быть не короче 3 символов"
+          ) {
+            alert("Имя и комментарий должны быть не короче 3 символов");
+          } else if (error.message === "Сервер сломался, попробуй позже") {
+            alert("Сервер сломался, попробуй позже");
+          } else {
+            alert("Кажется, у вас сломался интернет, попробуйте позже");
+          }
         });
 
-      userСomment.value = "";
-      userName.value = "";
       buttonAddComment.disabled = true;
     }
 
@@ -275,6 +320,7 @@
 
     // Обработчик события добавление комментария
     buttonAddComment.addEventListener("click", () => {
+      console.log("Прослушать кнопку добавления");
       addComment();
     });
 
