@@ -15,21 +15,23 @@
           type="text"
           class="add-form-name"
           placeholder="Введите ваше имя"
+          oninput="getName();"
         />
         <textarea
           type="textarea"
           class="add-form-text"
           placeholder="Введите ваш коментарий"
           rows="4"
+          oninput="getText()"
         ></textarea>
         <div class="add-form-row">
           <button class="add-form-button">Написать</button>
         </div>
       </div>
 
-      <!-- <div class="delete-comment">
-        <button class="delete-comment-button">Удалить комментарий</button>
-      </div> -->
+      <div class="loader-comment-add hidden" id="loader">
+        Комментарий добавляется...
+      </div>
     </div>
   </body>
 
@@ -51,6 +53,9 @@
         }
       )
         .then((response) => {
+          if (response.status === 500) {
+            throw new Error("Сервер сломался, попробуй позже");
+          }
           return response.json();
         })
         .then((responseData) => {
@@ -66,6 +71,13 @@
           });
           comments = appComments;
           renderComments();
+        })
+        .catch((error) => {
+          if (error.message === "Сервер сломался, попробуй позже") {
+            alert("Сервер сломался, попробуй позже");
+          } else {
+            alert("Кажется, у вас сломался интернет, попробуйте позже");
+          }
         });
     }
 
@@ -134,17 +146,17 @@
     // };
 
     //Ответ на комментарий
-    // const replyToComment = () => {
-    //   const commentElements = document.querySelectorAll(".comment");
-    //   const textareaText = document.querySelector(".add-form-text");
+    const replyToComment = () => {
+      const commentElements = document.querySelectorAll(".comment");
+      const textareaText = document.querySelector(".add-form-text");
 
-    //   for (const commentElement of commentElements) {
-    //     commentElement.addEventListener("click", () => {
-    //       const index = commentElement.dataset.index;
-    //       textareaText.value = `QUOTE_BEGIN ${comments[index].name}:\n${comments[index].text} QUOTE_END`;
-    //     });
-    //   }
-    // };
+      for (const commentElement of commentElements) {
+        commentElement.addEventListener("click", () => {
+          const index = commentElement.dataset.index;
+          textareaText.value = `QUOTE_BEGIN ${comments[index].name}:\n${comments[index].text} QUOTE_END`;
+        });
+      }
+    };
 
     function formatDate(time) {
       if (time < 10) {
@@ -165,7 +177,7 @@
     const renderComments = () => {
       const commentsHTML = comments
         .map((item, index) => {
-          return `<li class="comment">
+          return `<li class="comment" data-index='${index}'>
           <div class="comment-header">
             <div>${item.name}</div>
             <div>${getData(item.date)}</div>
@@ -178,7 +190,7 @@
             </div>
           </div>
           <div class="comment-footer">
-            <button class="edit-button">Редактировать</button>
+            <!--<button class="edit-button">Редактировать</button> -->
             <div class="likes">
               <span class="likes-counter">${item.likes}</span>
               <button data-index='${index}' class="like-button ${
@@ -193,30 +205,80 @@
       listComments.innerHTML = commentsHTML;
       likeComment();
       // editComment();
-      // replyToComment();
+      replyToComment();
     };
 
     //Рендеринг формы
     const renderForm = (isLoading) => {
       const formWindow = document.querySelector(".add-form");
+      const loaderText = document.getElementById("loader");
+
       if (isLoading) {
-        formWindow.innerHTML = `Комментарий добавляется...`;
+        loaderText.classList.remove("hidden");
+        formWindow.classList.add("hidden");
       } else {
-        formWindow.innerHTML = ` <input
-          type="text"
-          class="add-form-name"
-          placeholder="Введите ваше имя"
-        />
-        <textarea
-          type="textarea"
-          class="add-form-text"
-          placeholder="Введите ваш коментарий"
-          rows="4"
-        ></textarea>
-        <div class="add-form-row">
-          <button class="add-form-button">Написать</button>
-        </div>`;
+        loaderText.classList.add("hidden");
+        formWindow.classList.remove("hidden");
       }
+    };
+
+    const getName = () => userName.value;
+    const getText = () => userСomment.value;
+
+    const handlePostClick = () => {
+      fetch("https://webdev-hw-api.vercel.app/api/v1/zainullina/comments", {
+        method: "POST",
+        body: JSON.stringify({
+          text: userСomment.value
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;"),
+          name: userName.value
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;"),
+          forceError: true,
+        }),
+      })
+        .then((response) => {
+          if (response.status === 400) {
+            throw new Error(
+              "Имя и комментарий должны быть не короче 3 символов"
+            );
+          }
+          if (response.status === 500) {
+            throw new Error("Сервер сломался, попробуй позже");
+          }
+          return response.json();
+        })
+        .then((responseData) => {
+          return fetchGetData();
+        })
+        .then(() => {
+          isLoading = false;
+          renderForm(isLoading);
+          userСomment.value = "";
+          userName.value = "";
+          buttonAddComment.disabled = true;
+        })
+        .catch((error) => {
+          isLoading = false;
+
+          renderForm(isLoading);
+          if (
+            error.message ===
+            "Имя и комментарий должны быть не короче 3 символов"
+          ) {
+            alert("Имя и комментарий должны быть не короче 3 символов");
+          } else if (error.message === "Сервер сломался, попробуй позже") {
+            alert("Сервер сломался, попробуй позже");
+            handlePostClick();
+          } else {
+            alert("Кажется, у вас сломался интернет, попробуйте позже");
+          }
+        });
     };
 
     // Добавление новых комментариев
@@ -237,35 +299,7 @@
       isLoading = true;
       renderForm(isLoading);
 
-      fetch("https://webdev-hw-api.vercel.app/api/v1/zainullina/comments", {
-        method: "POST",
-        body: JSON.stringify({
-          text: userСomment.value
-            .replaceAll("&", "&amp;")
-            .replaceAll("<", "&lt;")
-            .replaceAll(">", "&gt;")
-            .replaceAll('"', "&quot;"),
-          name: userName.value
-            .replaceAll("&", "&amp;")
-            .replaceAll("<", "&lt;")
-            .replaceAll(">", "&gt;")
-            .replaceAll('"', "&quot;"),
-        }),
-      })
-        .then((response) => {
-          return response.json();
-        })
-        .then((responseData) => {
-          return fetchGetData();
-        })
-        .then(() => {
-          isLoading = false;
-          renderForm(isLoading);
-        });
-
-      userСomment.value = "";
-      userName.value = "";
-      buttonAddComment.disabled = true;
+      handlePostClick();
     }
 
     //Включение некликабельности кнопки при отсутствии имени
