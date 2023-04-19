@@ -3,9 +3,7 @@ import { renderLoginComponent, name } from "./components/login-component.js";
 
 let comments = [];
 
-let token = "Bearer bgc0b8awbwas6g5g5k5o5s5w606g37w3cc3bo3b83k39s3co3c83c03ck";
-
-token = null;
+let token;
 
 let isLoadingComments = true;
 let isLoadingAdd = false;
@@ -134,6 +132,10 @@ const renderApp = (isLoadingComments) => {
     })
     .join("");
 
+  if (localStorage.getItem("tokenLocal")) {
+    token = localStorage.getItem("tokenLocal");
+  }
+
   if (!token) {
     const appHtml = `
                     <ul class="comments">
@@ -160,6 +162,8 @@ const renderApp = (isLoadingComments) => {
 
     return;
   }
+
+  localStorage.setItem("tokenLocal", token);
 
   const appHtml = `
                 <ul class="comments">
@@ -201,7 +205,7 @@ const renderApp = (isLoadingComments) => {
   const userСomment = document.querySelector(".add-form-text");
   buttonAddComment.disabled = true;
 
-  userName.value = name;
+  userName.value = name ?? localStorage.getItem("nameLocal");
   userName.disabled = true;
 
   //Включение некликабельности кнопки при отсутствии имени
@@ -253,3 +257,4 @@ const renderApp = (isLoadingComments) => {
 };
 
 fetchCommentsAndRender();
+// localStorage.clear();
