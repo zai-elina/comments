@@ -37,6 +37,18 @@ export function addComment({ text, token }) {
   });
 }
 
+export function addLike({ token, id }) {
+  return fetch(host+`/${id}/`+'toggle-like', {
+    method: "POST",
+    headers: {
+      Authorization: token,
+    },
+  }).then((response) => {
+    return response.json();
+  });
+}
+
+
 
 export function loginUser({ login, password }) {
   return fetch("https://webdev-hw-api.vercel.app/api/user/login", {
@@ -68,3 +80,5 @@ export function registerUser({ login, password,name }) {
       return response.json();
     });
   }
+
+

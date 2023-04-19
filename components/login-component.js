@@ -59,7 +59,7 @@ export function renderLoginComponent({
           .then((user) => {
             setToken(`Bearer ${user.user.token}`);
             name = user.user.name;
-            localStorage.setItem('nameLocal',name);
+            // localStorage.setItem('nameLocal',name);
             fetchCommentsAndRender();
           })
           .catch((error) => {

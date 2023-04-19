@@ -1,39 +1,35 @@
-import { addComment, getComments } from "./api.js";
+import { addComment, getComments, addLike } from "./api.js";
+import { renderComments } from "./components/comments-component.js";
 import { renderLoginComponent, name } from "./components/login-component.js";
 
 let comments = [];
 
-let token;
+let token = null;
 
 let isLoadingComments = true;
 let isLoadingAdd = false;
 
-function delay(interval = 300) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve();
-    }, interval);
-  });
-}
 // Функция для проставления лайков
 const likeComment = (comments) => {
   const likesButton = document.querySelectorAll(".like-button");
-  const counter = document.querySelectorAll(".likes-counter");
 
   for (const item of likesButton) {
     item.addEventListener("click", (event) => {
       event.stopPropagation();
+      const id = item.dataset.id;
       const index = item.dataset.index;
 
       comments[index].isLikeLoading = true;
-      renderApp();
-      delay(2000).then(() => {
-        comments[index].likes = comments[index].isLiked
-          ? comments[index].likes - 1
-          : comments[index].likes + 1;
-        comments[index].isLiked = !comments[index].isLiked;
+      renderApp(isLoadingComments);
+
+      addLike({
+        token,
+        id,
+      }).then((responseData) => {
+        comments[index].likes = responseData.result.likes;
+        comments[index].isLiked = responseData.result.isLiked;
         comments[index].isLikeLoading = false;
-        renderApp();
+        renderApp(isLoadingComments);
       });
     });
   }
@@ -52,42 +48,6 @@ const replyToComment = (comments) => {
   }
 };
 
-const fetchCommentsAndRender = () => {
-  renderApp(isLoadingComments);
-  return getComments({ token })
-    .then((responseData) => {
-      const appComments = responseData.comments.map((comment) => {
-        return {
-          name: comment.author.name,
-          date: new Date(comment.date),
-          text: comment.text,
-          likes: comment.likes,
-          isLiked: comment.isLiked,
-          isLikeLoading: false,
-        };
-      });
-      comments = appComments;
-      isLoadingComments = false;
-      renderApp(isLoadingComments);
-    })
-    .catch((error) => {
-      alert(error.message);
-    });
-};
-
-function formatDate(time) {
-  if (time < 10) {
-    time = "0" + time;
-  }
-  return time;
-}
-
-function getData(date) {
-  return `${date.getDate()}.${formatDate(date.getMonth() + 1)}.${String(
-    date.getFullYear()
-  ).slice(2)} ${formatDate(date.getHours())}:${formatDate(date.getMinutes())}`;
-}
-
 //Рендеринг формы
 const renderForm = (isLoading) => {
   const formWindow = document.querySelector(".add-form");
@@ -102,39 +62,15 @@ const renderForm = (isLoading) => {
   }
 };
 
+//Рендеринг приложения
 const renderApp = (isLoadingComments) => {
   const appEl = document.getElementById("app");
-
-  const commentsHTML = comments
-    .map((item, index) => {
-      return `<li class="comment" data-index='${index}'>
-            <div class="comment-header">
-              <div>${item.name}</div>
-              <div>${getData(item.date)}</div>
-            </div>
-            <div class="comment-body">
-              <div class="comment-text">
-                ${item.text
-                  .replaceAll("QUOTE_BEGIN", "<div class='quote'>")
-                  .replaceAll("QUOTE_END", "</div>")}
-              </div>
-            </div>
-            <div class="comment-footer">
-              <!--<button class="edit-button">Редактировать</button> -->
-              <div class="likes">
-                <span class="likes-counter">${item.likes}</span>
-                <button data-index='${index}' class="like-button ${
-        item.isLiked ? "-active-like" : ""
-      } ${item.isLikeLoading ? "-loading-like" : ""}"></button>
-              </div>
-            </div>
-          </li>`;
-    })
-    .join("");
 
   if (localStorage.getItem("tokenLocal")) {
     token = localStorage.getItem("tokenLocal");
   }
+
+  const commentsHTML = renderComments(comments);
 
   if (!token) {
     const appHtml = `
@@ -256,5 +192,30 @@ const renderApp = (isLoadingComments) => {
   replyToComment(comments);
 };
 
+const fetchCommentsAndRender = () => {
+  renderApp(isLoadingComments);
+  return getComments({ token })
+    .then((responseData) => {
+      const appComments = responseData.comments.map((comment) => {
+        return {
+          name: comment.author.name,
+          date: new Date(comment.date),
+          text: comment.text,
+          likes: comment.likes,
+          isLiked: comment.isLiked,
+          isLikeLoading: false,
+          id: comment.id,
+        };
+      });
+      comments = appComments;
+      isLoadingComments = false;
+      renderApp(isLoadingComments);
+    })
+    .catch((error) => {
+      alert(error.message);
+    });
+};
+
 fetchCommentsAndRender();
-// localStorage.clear();
+localStorage.clear()
+token = null;
