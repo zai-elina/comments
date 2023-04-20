@@ -1,90 +1,221 @@
-import { listComments,renderForm } from "./renderStudents.js";
-import { fetchGetData,handlePostClick } from "./api.js";
+import { addComment, getComments, addLike } from "./api.js";
+import { renderComments } from "./components/comments-component.js";
+import { renderLoginComponent, name } from "./components/login-component.js";
 
-const buttonAddComment = document.querySelector(".add-form-button");
-const userName = document.querySelector(".add-form-name");
-const userСomment = document.querySelector(".add-form-text");
-buttonAddComment.disabled = true;
 let comments = [];
-let isLoading = false;
 
-listComments.textContent = "Пожалуйста подождите, комментарии загружаются...";
-fetchGetData(comments);
+let token = null;
 
+let isLoadingComments = true;
+let isLoadingAdd = false;
 
-//Функция изменения комментария
-// const editComment = () => {
-//   const editButtons = document.querySelectorAll(".edit-button");
-//   const commentText = document.querySelectorAll(".comment-text");
-//   for (const editButton of editButtons) {
-//     let isEdit = false;
+// Функция для проставления лайков
+const likeComment = (comments) => {
+  const likesButton = document.querySelectorAll(".like-button");
 
-//     editButton.addEventListener("click", (event) => {
-//       event.stopPropagation();
-//       const index = editButton.dataset.index;
+  for (const item of likesButton) {
+    item.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const id = item.dataset.id;
+      const index = item.dataset.index;
 
-//       if (!isEdit) {
-//         commentText[index].innerHTML = `<textarea
-//       type="textarea"
-//       id="edit-text"
-//       rows="4" style="width:500px"
-//     >${commentText[index].innerText}</textarea>`;
-//         editButton.innerText = "Сохранить";
-//       } else {
-//         const newText = document.getElementById("edit-text");
-//         comments[index].text = newText.value;
-//         renderComments();
-//       }
+      comments[index].isLikeLoading = true;
+      renderApp(isLoadingComments);
 
-//       isEdit = !isEdit;
-//     });
-//   }
-// };
+      addLike({
+        token,
+        id,
+      }).then((responseData) => {
+        comments[index].likes = responseData.result.likes;
+        comments[index].isLiked = responseData.result.isLiked;
+        comments[index].isLikeLoading = false;
+        renderApp(isLoadingComments);
+      });
+    });
+  }
+};
 
+//Ответ на комментрарий
+const replyToComment = (comments) => {
+  const commentElements = document.querySelectorAll(".comment");
+  const textareaText = document.querySelector(".add-form-text");
 
+  for (const commentElement of commentElements) {
+    commentElement.addEventListener("click", () => {
+      const index = commentElement.dataset.index;
+      textareaText.value = `QUOTE_BEGIN ${comments[index].name}:\n${comments[index].text} QUOTE_END`;
+    });
+  }
+};
 
-// Добавление новых комментариев
-function addComment() {
-  userName.classList.remove("error");
+//Рендеринг формы
+const renderForm = (isLoading) => {
+  const formWindow = document.querySelector(".add-form");
+  const loaderText = document.getElementById("loader");
 
-  if (userName.value == "") {
-    userName.classList.add("error");
+  if (isLoading) {
+    loaderText.classList.remove("hidden");
+    formWindow.classList.add("hidden");
+  } else {
+    loaderText.classList.add("hidden");
+    formWindow.classList.remove("hidden");
+  }
+};
+
+//Рендеринг приложения
+const renderApp = (isLoadingComments) => {
+  const appEl = document.getElementById("app");
+
+  if (localStorage.getItem("tokenLocal")) {
+    token = localStorage.getItem("tokenLocal");
+  }
+
+  const commentsHTML = renderComments(comments);
+
+  if (!token) {
+    const appHtml = `
+                    <ul class="comments">
+                            ${
+                              isLoadingComments
+                                ? "<p>Пожалуйста подождите, комментарии загружаются...</p>"
+                                : ""
+                            }
+                            ${commentsHTML}
+                        </ul>
+                        <p>Чтобы добавить комментарий, <button class="to-login-button">авторизуйтесь</button></p>
+                    `;
+
+    appEl.innerHTML = appHtml;
+    document.querySelector(".to-login-button").addEventListener("click", () => {
+      renderLoginComponent({
+        appEl,
+        setToken: (newToken) => {
+          token = newToken;
+        },
+        fetchCommentsAndRender,
+      });
+    });
+
     return;
   }
 
-  userСomment.classList.remove("error");
+  localStorage.setItem("tokenLocal", token);
 
-  if (userСomment.value == "") {
-    userСomment.classList.add("error");
-    return;
-  }
-  isLoading = true;
-  renderForm(isLoading);
+  const appHtml = `
+                <ul class="comments">
+                        ${
+                          isLoadingComments
+                            ? "<p>Пожалуйста подождите, комментарии загружаются...</p>"
+                            : ""
+                        }
+                        ${commentsHTML}
+                    </ul>
+                    <div class="add-form">
+                        <input
+                        type="text"
+                        class="add-form-name"
+                        placeholder="Введите ваше имя"
+                        oninput=""
+                        />
+                        <textarea
+                        type="textarea"
+                        class="add-form-text"
+                        placeholder="Введите ваш коментарий"
+                        rows="4"
+                        oninput=""
+                        ></textarea>
+                        <div class="add-form-row">
+                        <button class="add-form-button">Написать</button>
+                        </div>
+                    </div>
 
-  handlePostClick(comments,isLoading);
-}
+                    <div class="loader-comment-add hidden" id="loader">
+                        Комментарий добавляется...
+                    </div>
+                `;
 
-//Включение некликабельности кнопки при отсутствии имени
-userName.addEventListener("input", () => {
-  buttonAddComment.disabled = false;
-});
+  appEl.innerHTML = appHtml;
 
-// Обработчик события добавление комментария
-buttonAddComment.addEventListener("click", () => {
-  addComment();
-});
+  const buttonAddComment = document.querySelector(".add-form-button");
+  const userName = document.querySelector(".add-form-name");
+  const userСomment = document.querySelector(".add-form-text");
+  buttonAddComment.disabled = true;
 
-// Обработчик события добавление комментария по нажатию enter
-userСomment.addEventListener("keyup", (event) => {
-  if (event.code == "Enter") {
-    addComment();
-  }
-});
+  userName.value = name ?? localStorage.getItem("nameLocal");
+  userName.disabled = true;
 
-//Удаление последнего комментария
-// const deleteButton = document.querySelector(".delete-comment-button");
+  //Включение некликабельности кнопки при отсутствии имени
+  userСomment.addEventListener("input", () => {
+    buttonAddComment.disabled = false;
+  });
 
-// deleteButton.addEventListener("click", () => {
-//   comments.pop();
-//   renderComments();
-// });
+  // Обработчик события добавление комментария
+  buttonAddComment.addEventListener("click", () => {
+    userСomment.classList.remove("error");
+
+    if (userСomment.value == "") {
+      userСomment.classList.add("error");
+      return;
+    }
+    isLoadingAdd = true;
+    renderForm(isLoadingAdd);
+
+    // addComment({ text, token, isLoading });
+    // handlePostClick(comments,isLoading);
+    addComment({
+      text: userСomment.value
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;"),
+      token,
+    })
+      .then(() => {
+        return fetchCommentsAndRender();
+      })
+      .then(() => {
+        isLoadingAdd = false;
+        renderForm(isLoadingAdd);
+        userСomment.value = "";
+        buttonAddComment.disabled = true;
+      })
+      .catch((error) => {
+        isLoadingAdd = false;
+
+        renderForm(isLoadingAdd);
+        alert(error.message);
+      });
+  });
+
+  likeComment(comments);
+  // editComment();
+  replyToComment(comments);
+};
+
+const fetchCommentsAndRender = () => {
+  renderApp(isLoadingComments);
+  return getComments({ token })
+    .then((responseData) => {
+      const appComments = responseData.comments.map((comment) => {
+        return {
+          name: comment.author.name,
+          date: new Date(comment.date),
+          text: comment.text,
+          likes: comment.likes,
+          isLiked: comment.isLiked,
+          isLikeLoading: false,
+          id: comment.id,
+        };
+      });
+      comments = appComments;
+      isLoadingComments = false;
+      renderApp(isLoadingComments);
+    })
+    .catch((error) => {
+      alert(error.message);
+    });
+};
+
+fetchCommentsAndRender();
+// localStorage.clear()
+// token = null;
