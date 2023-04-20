@@ -217,5 +217,5 @@ const fetchCommentsAndRender = () => {
 };
 
 fetchCommentsAndRender();
-localStorage.clear()
-token = null;
+// localStorage.clear()
+// token = null;

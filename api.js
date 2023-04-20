@@ -1,4 +1,5 @@
 const host = "https://webdev-hw-api.vercel.app/api/v2/zai-elina/comments";
+const host_user = "https://webdev-hw-api.vercel.app/api/user" ;
 
 export function getComments({ token }) {
   return fetch(host, {
@@ -38,7 +39,7 @@ export function addComment({ text, token }) {
 }
 
 export function addLike({ token, id }) {
-  return fetch(host+`/${id}/`+'toggle-like', {
+  return fetch(`${host}/${id}/toggle-like`, {
     method: "POST",
     headers: {
       Authorization: token,
@@ -51,7 +52,7 @@ export function addLike({ token, id }) {
 
 
 export function loginUser({ login, password }) {
-  return fetch("https://webdev-hw-api.vercel.app/api/user/login", {
+  return fetch(`${host_user}/login`, {
     method: "POST",
     body: JSON.stringify({
       login,
@@ -66,7 +67,7 @@ export function loginUser({ login, password }) {
 }
 
 export function registerUser({ login, password,name }) {
-    return fetch("https://webdev-hw-api.vercel.app/api/user", {
+    return fetch(host_user, {
       method: "POST",
       body: JSON.stringify({
         login,
