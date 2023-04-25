@@ -160,8 +160,6 @@ const renderApp = (isLoadingComments) => {
     isLoadingAdd = true;
     renderForm(isLoadingAdd);
 
-    // addComment({ text, token, isLoading });
-    // handlePostClick(comments,isLoading);
     addComment({
       text: userСomment.value
         .replaceAll("&", "&amp;")

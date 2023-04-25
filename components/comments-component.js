@@ -1,15 +1,16 @@
-function formatDate(time) {
-  if (time < 10) {
-    time = "0" + time;
-  }
-  return time;
-}
+import { format } from "date-fns";
+// function formatDate(time) {
+//   if (time < 10) {
+//     time = "0" + time;
+//   }
+//   return time;
+// }
 
-function getData(date) {
-  return `${date.getDate()}.${formatDate(date.getMonth() + 1)}.${String(
-    date.getFullYear()
-  ).slice(2)} ${formatDate(date.getHours())}:${formatDate(date.getMinutes())}`;
-}
+// function getData(date) {
+//   return `${date.getDate()}.${formatDate(date.getMonth() + 1)}.${String(
+//     date.getFullYear()
+//   ).slice(2)} ${formatDate(date.getHours())}:${formatDate(date.getMinutes())}`;
+// }
 
 export const renderComments = (comments) => {
   return comments
@@ -17,7 +18,7 @@ export const renderComments = (comments) => {
       return `<li class="comment" data-index='${index}'>
             <div class="comment-header">
               <div>${item.name}</div>
-              <div>${getData(item.date)}</div>
+              <div>${format(item.date, "yyyy-mm-dd hh.mm.ss")}</div>
             </div>
             <div class="comment-body">
               <div class="comment-text">
