@@ -1,4 +1,5 @@
 import { loginUser,registerUser } from "../api.js";
+import _ from 'lodash';
 export let name;
 
 export function renderLoginComponent({
@@ -95,7 +96,7 @@ export function renderLoginComponent({
         registerUser({
           login: login.value,
           password: password.value,
-          name: name.value,
+          name: _.capitalize(name.value),
         })
           .then((user) => {
             setToken(`Bearer ${user.user.token}`);
