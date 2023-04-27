@@ -1,16 +1,4 @@
 import { format } from "date-fns";
-// function formatDate(time) {
-//   if (time < 10) {
-//     time = "0" + time;
-//   }
-//   return time;
-// }
-
-// function getData(date) {
-//   return `${date.getDate()}.${formatDate(date.getMonth() + 1)}.${String(
-//     date.getFullYear()
-//   ).slice(2)} ${formatDate(date.getHours())}:${formatDate(date.getMinutes())}`;
-// }
 
 export const renderComments = (comments) => {
   return comments
