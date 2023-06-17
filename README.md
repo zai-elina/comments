@@ -1,6 +1,6 @@
 # Проект "Комментарии"
 
-https://zai-elina.github.io/webdev-dom-homework/
+https://zai-elina.github.io/comments/
 
 Верстка вязта из источника
 
